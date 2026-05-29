@@ -9,7 +9,7 @@ const connectDB = require("./config/db");
 // ================= ROUTES =================
 const authRoutes = require("./routes/auth");
 const productRoutes = require("./routes/products");
-const salesRoutes = require("./routes/sales"); // ✅ YES, INCLUDED
+const salesRoutes = require("./routes/sales");
 const stockRoutes = require("./routes/stock");
 const dashboardRoutes = require("./routes/dashboard");
 const categoryRoutes = require("./routes/category");
@@ -23,10 +23,16 @@ connectDB();
 /* ================= APP INIT ================= */
 const app = express();
 
+/* ================= ALLOWED ORIGINS ================= */
+const allowedOrigins = [
+  "http://localhost:5173",
+  process.env.CLIENT_URL, // set this in Render later
+];
+
 /* ================= MIDDLEWARE ================= */
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: allowedOrigins,
     credentials: true,
   })
 );
@@ -41,7 +47,7 @@ app.get("/", (req, res) => {
 /* ================= API ROUTES ================= */
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
-app.use("/api/sales", salesRoutes); // ✅ SALES ROUTE ADDED
+app.use("/api/sales", salesRoutes);
 app.use("/api/stock", stockRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/categories", categoryRoutes);
@@ -52,8 +58,9 @@ const server = http.createServer(app);
 /* ================= SOCKET SETUP ================= */
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
