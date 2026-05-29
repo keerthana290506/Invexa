@@ -1,5 +1,6 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
+
 const {
   createProduct,
   getProducts,
@@ -8,23 +9,29 @@ const {
   deleteProduct,
   exportProductsCSV,
   getCategories,
-} = require('../controllers/productController');
-const { protect } = require('../middleware/auth');
-const { adminOnly } = require('../middleware/roleCheck');
- 
-// All routes require authentication
+} = require("../controllers/productControllers");
+
+const { protect } = require("../middleware/auth");
+const { adminOnly } = require("../middleware/roleCheck");
+
+/* =========================
+   ALL ROUTES REQUIRE LOGIN
+========================= */
 router.use(protect);
- 
-router.get('/export/csv', adminOnly, exportProductsCSV);
-router.get('/categories', getCategories);
- 
-router.route('/')
-  .get(getProducts)
-  .post(adminOnly, createProduct);
- 
-router.route('/:id')
-  .get(getProduct)
-  .put(adminOnly, updateProduct)
-  .delete(adminOnly, deleteProduct);
- 
+
+/* =========================
+   PUBLIC (LOGGED-IN USERS)
+========================= */
+router.get("/", getProducts);
+router.get("/categories", getCategories);
+router.get("/:id", getProduct);
+
+/* =========================
+   ADMIN ONLY ROUTES
+========================= */
+router.post("/", adminOnly, createProduct);
+router.put("/:id", adminOnly, updateProduct);
+router.delete("/:id", adminOnly, deleteProduct);
+router.get("/export/csv", adminOnly, exportProductsCSV);
+
 module.exports = router;

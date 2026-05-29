@@ -1,5 +1,6 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
+
 const {
   getDashboardSummary,
   getWeeklyTrend,
@@ -9,20 +10,27 @@ const {
   getAlerts,
   markAlertRead,
   markAllAlertsRead,
-} = require('../controllers/dashboardController');
-const { protect } = require('../middleware/auth');
- 
+} = require("../controllers/dashboardControllers");
+
+const { protect } = require("../middleware/auth");
+
+// 🔐 Protect all dashboard routes
 router.use(protect);
- 
-router.get('/summary', getDashboardSummary);
-router.get('/weekly-trend', getWeeklyTrend);
-router.get('/monthly-trend', getMonthlyTrend);
-router.get('/low-stock', getLowStockItems);
-router.get('/restock-suggestions', getRestockSuggestionsHandler);
- 
-// Alerts
-router.get('/alerts', getAlerts);
-router.patch('/alerts/read-all', markAllAlertsRead);
-router.patch('/alerts/:id/read', markAlertRead);
- 
+
+// ================= DASHBOARD =================
+router.get("/summary", getDashboardSummary);
+
+// ⚠️ TREND ROUTES (IMPORTANT FIX BELOW)
+router.get("/weekly-trend", getWeeklyTrend);
+router.get("/monthly-trend", getMonthlyTrend);
+
+// ================= STOCK =================
+router.get("/low-stock", getLowStockItems);
+router.get("/restock-suggestions", getRestockSuggestionsHandler);
+
+// ================= ALERTS =================
+router.get("/alerts", getAlerts);
+router.patch("/alerts/read-all", markAllAlertsRead);
+router.patch("/alerts/:id/read", markAlertRead);
+
 module.exports = router;

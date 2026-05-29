@@ -1,3 +1,18 @@
+const jwt = require('jsonwebtoken');
+
+const generateToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRE || '30d',
+  });
+};
+
+// Paginate helper
+const paginate = (query, page = 1, limit = 10) => {
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+  return query.skip(skip).limit(parseInt(limit));
+};
+
+// Build pagination meta
 const paginationMeta = (total, page, limit) => {
   const totalPages = Math.ceil(total / limit);
   return {
@@ -9,7 +24,7 @@ const paginationMeta = (total, page, limit) => {
     hasPrevPage: parseInt(page) > 1,
   };
 };
- 
+
 // CSV export helper
 const convertToCSV = (data, fields) => {
   if (!data.length) return '';
@@ -26,5 +41,5 @@ const convertToCSV = (data, fields) => {
   );
   return [header, ...rows].join('\n');
 };
- 
+
 module.exports = { generateToken, paginate, paginationMeta, convertToCSV };

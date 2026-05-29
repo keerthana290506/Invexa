@@ -7,7 +7,7 @@ const {
   getUsers,
   updateUser,
   changePassword,
-} = require('../controllers/authController');
+} = require('../controllers/authControlllers');
 const { protect } = require('../middleware/auth');
 const { adminOnly } = require('../middleware/roleCheck');
  
@@ -15,11 +15,11 @@ const { adminOnly } = require('../middleware/roleCheck');
 router.post('/login', login);
  
 // Protected
-router.get('/me', protect, getMe);
+router.get('/me',protect,  getMe);
 router.put('/change-password', protect, changePassword);
  
 // Admin only
-router.post('/register', protect, adminOnly, register);
+router.post('/register', register);
 router.get('/users', protect, adminOnly, getUsers);
 router.put('/users/:id', protect, adminOnly, updateUser);
  

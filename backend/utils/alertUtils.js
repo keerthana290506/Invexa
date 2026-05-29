@@ -1,160 +1,148 @@
-const Alert = require('../models/Alert');
-const Sale = require('../models/Sale');
-const { sendLowStockAlert } = require('./emailService');
- 
-// Check stock and create alerts if needed
+const Alert = require("../models/Alert");
+const Sale = require("../models/Sale");
+const Product = require("../models/Product");
+const User = require("../models/User");
+const { sendLowStockAlert } = require("./emailService");
+
+/**
+ * Check stock and create alerts if needed
+ */
 const checkAndCreateAlert = async (product) => {
-  if (product.stockQuantity > product.reorderLevel) {
-    // If stock is back to normal, resolve existing alerts
-    await Alert.updateMany(
-      { productId: product._id, isResolved: false },
-      { isResolved: true }
-    );
-    // Reset alertSent flag on product
-    product.alertSent = false;
-    await product.save();
-    return null;
-  }
- 
-  // Calculate predicted demand using 7-day Simple Moving Average
-  const predictedDemand = await getPredictedDemand(product._id);
- 
-  const alertType =
-    product.stockQuantity === 0 ? 'out_of_stock' : 'low_stock';
- 
-  let message =
-    product.stockQuantity === 0
-      ? `${product.name} is OUT OF STOCK. Immediate restock required!`
-      : `${product.name} stock is LOW (${product.stockQuantity} ${product.unit} remaining, reorder level: ${product.reorderLevel} ${product.unit}).`;
- 
-  if (predictedDemand > 0) {
-    message += ` Predicted demand for next 7 days: ${predictedDemand} units.`;
-    if (product.stockQuantity < predictedDemand) {
-      message += ` Current stock will NOT meet predicted demand.`;
+  try {
+    // ✅ CASE 1: Stock is OK → resolve alerts
+    if (product.stockQuantity > product.reorderLevel) {
+      await Alert.updateMany(
+        { productId: product._id, isResolved: false },
+        { isResolved: true }
+      );
+
+      product.alertSent = false;
+      await product.save();
+
+      return null;
     }
-  }
- 
-  // Check if there's already an unresolved alert for this product
-  const existingAlert = await Alert.findOne({
-    productId: product._id,
-    isResolved: false,
-    alertType,
-  });
- 
-  if (!existingAlert) {
-    const alert = await Alert.create({
-      productId: product._id,
-      productName: product.name,
-      sku: product.sku,
-      alertType,
-      currentStock: product.stockQuantity,
-      reorderLevel: product.reorderLevel,
-      predictedDemand,
-      message,
-    });
- 
-    // Send email if not already sent
-    if (!product.alertSent) {
-      const emailSent = await sendLowStockAlert(product);
-      if (emailSent) {
-        alert.emailSent = true;
-        await alert.save();
-        product.alertSent = true;
-        await product.save();
+
+    // ✅ CASE 2: Calculate demand
+    const predictedDemand = await getPredictedDemand(product._id);
+
+    const alertType =
+      product.stockQuantity === 0 ? "out_of_stock" : "low_stock";
+
+    let message =
+      product.stockQuantity === 0
+        ? `${product.name} is OUT OF STOCK. Immediate restock required!`
+        : `${product.name} stock is LOW (${product.stockQuantity} ${product.unit} remaining, reorder level: ${product.reorderLevel} ${product.unit}).`;
+
+    if (predictedDemand > 0) {
+      message += ` Predicted demand for next 7 days: ${predictedDemand} units.`;
+
+      if (product.stockQuantity < predictedDemand) {
+        message += ` Current stock will NOT meet predicted demand.`;
       }
     }
- 
-    return alert;
-  } else {
-    // Update existing alert with latest stock info
+
+    // ✅ check existing alert
+    const existingAlert = await Alert.findOne({
+      productId: product._id,
+      isResolved: false,
+      alertType,
+    });
+
+    if (!existingAlert) {
+      const alert = await Alert.create({
+        productId: product._id,
+        productName: product.name,
+        sku: product.sku,
+        alertType,
+        currentStock: product.stockQuantity,
+        reorderLevel: product.reorderLevel,
+        predictedDemand,
+        message,
+      });
+
+      // ✅ EMAIL to all admins
+      if (!product.alertSent) {
+        const admins = await User.find({ role: "admin" });
+
+        let successCount = 0;
+
+        await Promise.all(
+          admins.map(async (admin) => {
+            const emailSent = await sendLowStockAlert({
+              ...product.toObject(),
+              email: admin.email,
+            });
+
+            if (emailSent) successCount++;
+          })
+        );
+
+        if (successCount > 0) {
+          alert.emailSent = true;
+          await alert.save();
+
+          product.alertSent = true;
+          await product.save();
+        }
+      }
+
+      return alert;
+    }
+
+    // ✅ update existing alert
     existingAlert.currentStock = product.stockQuantity;
     existingAlert.predictedDemand = predictedDemand;
     existingAlert.message = message;
+
     await existingAlert.save();
+
     return existingAlert;
+  } catch (error) {
+    console.error("Alert Error:", error.message);
+    return null;
   }
 };
- 
-// Simple Moving Average: last 7 days sales for a product
+
+/**
+ * Simple Moving Average demand prediction
+ */
 const getPredictedDemand = async (productId) => {
   try {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
- 
+
     const salesData = await Sale.aggregate([
       {
         $match: {
           date: { $gte: sevenDaysAgo },
-          status: 'completed',
+          status: "completed",
         },
       },
-      { $unwind: '$items' },
+      { $unwind: "$items" },
       {
         $match: {
-          'items.productId': productId,
+          "items.productId": productId,
         },
       },
       {
         $group: {
           _id: null,
-          totalSold: { $sum: '$items.quantitySold' },
+          totalSold: { $sum: "$items.quantitySold" },
         },
       },
     ]);
- 
+
     if (!salesData.length) return 0;
- 
+
     const totalSalesLast7Days = salesData[0].totalSold;
-    const averageDailySales = totalSalesLast7Days / 7;
-    const predictedDemand = Math.ceil(averageDailySales * 7);
- 
-    return predictedDemand;
+    return Math.ceil(totalSalesLast7Days);
   } catch (error) {
-    console.error('Error calculating predicted demand:', error);
+    console.error("Error calculating predicted demand:", error);
     return 0;
   }
 };
- 
-// Get restock suggestions for all products
-const getRestockSuggestions = async () => {
-  const Product = require('../models/Product');
-  const products = await Product.find({ isActive: true });
- 
-  const suggestions = [];
- 
-  for (const product of products) {
-    const predictedDemand = await getPredictedDemand(product._id);
- 
-    if (predictedDemand > 0 && product.stockQuantity < predictedDemand) {
-      const shortfall = predictedDemand - product.stockQuantity;
-      suggestions.push({
-        productId: product._id,
-        productName: product.name,
-        sku: product.sku,
-        category: product.category,
-        currentStock: product.stockQuantity,
-        predictedDemand,
-        shortfall,
-        reorderLevel: product.reorderLevel,
-        isLowStock: product.stockQuantity <= product.reorderLevel,
-        message: `Restock ${shortfall} ${product.unit} to meet predicted demand of ${predictedDemand} ${product.unit} for next 7 days.`,
-        priority:
-          product.stockQuantity === 0
-            ? 'critical'
-            : product.stockQuantity <= product.reorderLevel
-            ? 'high'
-            : 'medium',
-      });
-    }
-  }
- 
-  // Sort by priority
-  const priorityOrder = { critical: 0, high: 1, medium: 2 };
-  suggestions.sort(
-    (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]
-  );
- 
-  return suggestions;
+
+module.exports = {
+  checkAndCreateAlert,
+  getPredictedDemand,
 };
- 
-module.exports = { checkAndCreateAlert, getPredictedDemand, getRestockSuggestions };
