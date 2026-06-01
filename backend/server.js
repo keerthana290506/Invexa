@@ -54,7 +54,7 @@ const io = new Server(server, {
   cors: {
     origin: [
       "http://localhost:5173",
-      "https://invexa-6.onrender.com"
+      "https://invexa-1-1.onrender.com/api"
     ],
     methods: ["GET", "POST"],
   },
