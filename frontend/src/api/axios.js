@@ -22,7 +22,7 @@ axiosInstance.interceptors.request.use(
     }
 
     console.log(
-      "📦 FINAL AUTH HEADER:",
+      "FINAL AUTH HEADER:",
       config.headers.Authorization
     );
 
