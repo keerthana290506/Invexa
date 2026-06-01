@@ -13,7 +13,7 @@ const Stock = () => {
 
         console.log("STOCK RESPONSE:", res);
 
-        // ✅ FIX: correct access (because axios returns response.data)
+     
         setProducts(res?.data || []);
       } catch (err) {
         console.error("Stock fetch error:", err);

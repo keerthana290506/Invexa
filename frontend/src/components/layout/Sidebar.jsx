@@ -21,7 +21,7 @@ const Sidebar = () => {
           Products
         </NavLink>
 
-        <NavLink to="/stocks" className={linkClass}>
+        <NavLink to="/stock" className={linkClass}>
           Stock
         </NavLink>
 

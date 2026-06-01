@@ -18,7 +18,7 @@ const ProtectedRoute = ({
     );
   }
 
-  /* NOT LOGGED IN */
+
   if (!isAuthenticated) {
     return (
       <Navigate
