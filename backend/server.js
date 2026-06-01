@@ -9,7 +9,7 @@ const connectDB = require("./config/db");
 // ================= ROUTES =================
 const authRoutes = require("./routes/auth");
 const productRoutes = require("./routes/products");
-const salesRoutes = require("./routes/sales"); // ✅ YES, INCLUDED
+const salesRoutes = require("./routes/sales"); // 
 const stockRoutes = require("./routes/stock");
 const dashboardRoutes = require("./routes/dashboard");
 const categoryRoutes = require("./routes/category");
@@ -35,13 +35,13 @@ app.use(express.json());
 
 /* ================= TEST ROUTE ================= */
 app.get("/", (req, res) => {
-  res.send("Invex Backend Running 🚀");
+  res.send("Invex Backend Running");
 });
 
 /* ================= API ROUTES ================= */
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
-app.use("/api/sales", salesRoutes); // ✅ SALES ROUTE ADDED
+app.use("/api/sales", salesRoutes); // 
 app.use("/api/stock", stockRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/categories", categoryRoutes);
@@ -54,9 +54,10 @@ const io = new Server(server, {
   cors: {
     origin: [
       "http://localhost:5173",
-      "https://invexa-1-1.onrender.com/api"
+      "https://invexa-6.onrender.com"
     ],
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
