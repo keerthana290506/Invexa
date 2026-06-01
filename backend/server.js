@@ -26,11 +26,13 @@ const app = express();
 /* ================= MIDDLEWARE ================= */
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: [
+      "http://localhost:5173",
+      "https://invexa-6-1.onrender.com",
+    ],
     credentials: true,
   })
 );
-
 app.use(express.json());
 
 /* ================= TEST ROUTE ================= */
