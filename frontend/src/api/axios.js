@@ -1,12 +1,14 @@
 import axios from "axios";
 console.log("BASE URL =", import.meta.env.VITE_API_URL);
 
-const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ||
-  "https://invexa-1-1.onrender.com/api",
-  
-  console.log("API_URL =", API_URL),
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://invexa-1-1.onrender.com/api";
 
+console.log("BASE URL =", API_URL);
+
+const axiosInstance = axios.create({
+  baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
   },
