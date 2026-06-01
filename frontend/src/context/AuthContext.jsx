@@ -23,7 +23,7 @@ const AuthProvider = ({ children }) => {
           return;
         }
 
-        const res = await axiosInstance.get("/auth/me");
+        const res = await axiosInstance.get("/api/auth/me");
 
         console.log("ME RESPONSE:", res);
 
@@ -50,10 +50,7 @@ const AuthProvider = ({ children }) => {
   try {
     setAuthLoading(true);
 
-    const res = await axiosInstance.post(
-      "/auth/login",
-      credentials
-    );
+    const res = await axiosInstance.post("/api/auth/login", credentials);
 
     console.log("LOGIN RESPONSE:", res);
 
@@ -88,14 +85,11 @@ const AuthProvider = ({ children }) => {
   try {
     setAuthLoading(true);
 
-    const res = await axiosInstance.post(
-      "/auth/register",
-      payload
-    );
+    const res = await axiosInstance.post("/api/auth/register", payload);
 
     console.log("REGISTER RESPONSE:", res);
 
-    const userData = res.data ? res.data : res;
+    const userData = res;
 
     localStorage.setItem(
       "invexa_token",
