@@ -14,8 +14,8 @@ axiosInstance.interceptors.request.use(
     const token = localStorage.getItem("invexa_token");
 
     
-    console.log("➡️ API URL:", config.url);
-    console.log("🔑 TOKEN:", token);
+    console.log("API URL:", config.url);
+    console.log("TOKEN:", token);
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
